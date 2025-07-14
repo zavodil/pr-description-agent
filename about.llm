@@ -1,0 +1,260 @@
+# AI PR Description Bot - Complete Project Documentation
+
+## Project Overview
+
+**AI PR Description Bot** is a GitHub App that automatically generates professional Pull Request descriptions using AI. When a PR author comments `/describe` on their pull request, the bot analyzes the code diff and generates a comprehensive description using OpenAI's language models.
+
+## Architecture
+
+### Core Components
+
+1. **FastAPI Web Server** (`app.py`)
+   - Handles GitHub webhook events
+   - Provides health check endpoints
+   - Manages async request processing
+   - Uses Pydantic for data validation
+
+2. **GitHub Authentication** (`auth.py`)
+   - Manages GitHub App JWT token generation
+   - Handles installation token acquisition
+   - Uses RSA private key for App authentication
+
+3. **GitHub API Client** (`github_client.py`)
+   - Fetches PR information and diff content
+   - Updates PR descriptions via GitHub API
+   - Handles rate limiting and error cases
+
+4. **OpenAI Integration** (`openai_client.py`)
+   - Generates PR descriptions using GPT models
+   - Customizable prompts for different description styles
+   - Async HTTP requests for performance
+
+### Technology Stack
+
+- **Backend**: FastAPI + Uvicorn (ASGI server)
+- **HTTP Client**: httpx (async requests)
+- **Authentication**: PyJWT + cryptography
+- **AI Integration**: OpenAI Chat Completions API
+- **Configuration**: python-dotenv
+- **Type Safety**: Pydantic models
+
+## Workflow
+
+1. **Installation**: Users install the GitHub App on their repositories
+2. **Trigger**: PR author comments `/describe` on any pull request
+3. **Webhook**: GitHub sends issue_comment webhook to the bot server
+4. **Validation**: Bot verifies webhook signature and checks if commenter is PR author
+5. **Data Fetching**: Bot retrieves PR diff and metadata via GitHub API
+6. **AI Generation**: OpenAI analyzes the diff and generates description
+7. **Update**: Bot updates the PR description via GitHub API
+
+## Security Features
+
+- **Webhook Signature Verification**: HMAC-SHA256 validation
+- **Author Verification**: Only PR authors can trigger description generation
+- **Token Scoping**: Installation tokens are scoped to specific repositories
+- **Permission Model**: Minimal required permissions (pull_requests: write, issues: read)
+
+## Configuration
+
+### Environment Variables
+
+```bash
+# GitHub App Configuration
+GITHUB_APP_ID=123456
+GITHUB_WEBHOOK_SECRET=your_webhook_secret
+GITHUB_PRIVATE_KEY_PATH=/path/to/private-key.pem
+# OR
+GITHUB_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n..."
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-...
+OPENAI_BASE_URL=https://api.openai.com/v1
+DEFAULT_MODEL_NAME=gpt-4-turbo-preview
+
+# Server Configuration
+PORT=8000
+```
+
+### GitHub App Permissions
+
+- **Pull requests**: Write (to update PR descriptions)
+- **Issues**: Read (to read PR comments)
+- **Contents**: Read (to access code diffs)
+- **Metadata**: Read (basic repository access)
+
+### Webhook Events
+
+- **issue_comment**: Triggered when comments are created on PRs
+
+## API Endpoints
+
+- `POST /webhook` - GitHub webhook receiver
+- `GET /` - Basic health check
+- `GET /health` - Detailed health status
+
+## File Structure
+
+```
+├── app.py                    # Main FastAPI application
+├── auth.py                   # GitHub App authentication
+├── github_client.py          # GitHub API client
+├── openai_client.py          # OpenAI integration
+├── pyproject.toml           # Python project configuration
+├── requirements.txt         # Legacy dependency list
+├── .env.template           # Environment variables template
+└── app-manifest.yml        # GitHub App manifest
+```
+
+## Installation & Deployment
+
+### Local Development
+
+```bash
+# Install dependencies
+pip install -e .
+
+# Configure environment
+cp .env.template .env
+# Edit .env with your credentials
+
+# Run server
+python app.py
+# or
+uvicorn app:app --host 0.0.0.0 --port 8000
+```
+
+### Production Deployment
+
+1. **GitHub App Creation**:
+   - Go to GitHub Settings > Developer settings > GitHub Apps
+   - Use `app-manifest.yml` or create manually
+   - Download private key and note App ID
+
+2. **Server Setup**:
+   - Deploy FastAPI app to cloud provider
+   - Set environment variables
+   - Configure webhook URL in GitHub App settings
+
+3. **SSL/HTTPS**: Required for GitHub webhooks
+
+## Usage
+
+1. Install the GitHub App on target repositories
+2. Create a pull request (description can be empty)
+3. Comment `/describe` on the PR
+4. Wait 30-60 seconds for AI-generated description
+
+## AI Prompt Engineering
+
+The bot uses a structured prompt that analyzes:
+- **Code changes**: File modifications, additions, deletions
+- **Context**: PR title and commit messages
+- **Structure**: Generates "What changed", "Why", and "Technical details" sections
+
+Current prompt template focuses on:
+- Professional tone
+- Bullet-point formatting
+- Markdown structure
+- Technical accuracy
+- Concise explanations (under 500 words)
+
+## Error Handling
+
+- **GitHub API failures**: Logged with specific error codes
+- **OpenAI timeout**: 60-second timeout with retry logic
+- **Authentication errors**: JWT token refresh and validation
+- **Webhook security**: Signature verification prevents unauthorized access
+
+## Monitoring & Logging
+
+- Console logging for all major operations
+- HTTP status code tracking
+- Performance metrics via FastAPI built-ins
+- Health check endpoints for uptime monitoring
+
+## Extension Points
+
+### Current Architecture Supports:
+
+1. **Multiple AI Providers**: Swap OpenAI for other LLM APIs
+2. **Custom Prompts**: Command modifiers like `/describe --technical`
+3. **Template Systems**: Different description formats per repository
+4. **Analytics**: Usage tracking and metrics collection
+5. **Rate Limiting**: User/repository-based quotas
+6. **Caching**: Description caching for similar diffs
+
+### Potential Enhancements:
+
+- **Database Integration**: Store generated descriptions and user preferences
+- **Batch Processing**: Handle multiple PRs simultaneously
+- **Custom Models**: Fine-tuned models for specific codebases
+- **Integration APIs**: Slack/Teams notifications
+- **Web Dashboard**: Usage analytics and configuration UI
+- **Multi-language Support**: Localized descriptions
+
+## Testing Strategy
+
+### Unit Tests (pytest):
+- GitHub API client mocking
+- OpenAI response simulation
+- Webhook payload validation
+- Authentication token handling
+
+### Integration Tests:
+- End-to-end webhook processing
+- GitHub API integration
+- OpenAI API integration
+
+### Test Commands:
+```bash
+# Install dev dependencies
+pip install -e ".[dev]"
+
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=.
+
+# Type checking
+mypy .
+
+# Code formatting
+black .
+```
+
+## Performance Considerations
+
+- **Async Operations**: All I/O operations are asynchronous
+- **Connection Pooling**: httpx handles connection reuse
+- **Timeout Management**: Prevents hanging requests
+- **Memory Efficiency**: Streaming responses where possible
+
+## Contributing Guidelines
+
+1. **Code Style**: Black formatter (88 character line length)
+2. **Type Hints**: Full type annotations required
+3. **Error Handling**: Comprehensive exception handling
+4. **Testing**: Unit tests for new features
+5. **Documentation**: Update this document for architectural changes
+
+## Troubleshooting
+
+### Common Issues:
+
+1. **Webhook not received**: Check GitHub App webhook URL and SSL certificate
+2. **Authentication failed**: Verify GitHub App ID and private key format
+3. **OpenAI errors**: Check API key and rate limits
+4. **Permission denied**: Ensure GitHub App has correct permissions
+
+### Debug Mode:
+```bash
+# Enable debug logging
+uvicorn app:app --log-level debug
+
+# Check webhook deliveries in GitHub App settings
+# Monitor server logs for detailed error messages
+```
+
+This documentation provides complete context for any developer to understand, maintain, and extend the AI PR Description Bot project.
