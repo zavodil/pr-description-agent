@@ -89,11 +89,17 @@ class PRDescriptionBot:
         """Process newly opened PR and generate description"""
         try:
             # Extract PR info
+            if 'installation' not in event:
+                print("No installation found in PR event")
+                return False
+
             installation_id = event['installation']['id']
             pr = event['pull_request']
             owner = pr['base']['repo']['owner']['login']
             repo = pr['base']['repo']['name']
             pr_number = pr['number']
+
+            print(f"Processing new PR {owner}/{repo}#{pr_number}")
 
             # Get installation token
             token = await self.github_auth.get_installation_token(installation_id)
@@ -132,6 +138,8 @@ class PRDescriptionBot:
 
         except Exception as e:
             print(f"Error processing new PR: {e}")
+            import traceback
+            traceback.print_exc()
             return False
 
     async def process_pr_comment(self, event: dict) -> bool:
@@ -210,6 +218,11 @@ async def webhook(request: Request):
     try:
         event = json.loads(payload)
 
+        # Debug logging
+        event_type = request.headers.get('X-GitHub-Event', 'unknown')
+        action = event.get('action', 'no_action')
+        print(f"Received webhook: {event_type}.{action}")
+
         # Process issue comment events (manual /describe)
         if event.get('action') == 'created' and 'comment' in event:
             if bot.should_process_comment(event):
@@ -225,10 +238,12 @@ async def webhook(request: Request):
                 content={'status': 'pr_auto_generated', 'success': success}
             )
 
-        return JSONResponse(content={'status': 'ignored'})
+        return JSONResponse(content={'status': 'ignored', 'event': f"{event_type}.{action}"})
 
     except Exception as e:
         print(f"Webhook error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal error"
