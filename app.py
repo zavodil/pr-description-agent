@@ -80,7 +80,8 @@ class PRDescriptionBot:
             return False
 
         # Check if description is empty or contains trigger
-        pr_body = event['pull_request'].get('body', '').strip()
+        pr_body = event['pull_request'].get('body') or ''  # Handle None
+        pr_body = pr_body.strip()
 
         # Auto-generate if empty or contains /ai-describe
         return not pr_body or '/ai-describe' in pr_body
