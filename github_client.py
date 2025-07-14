@@ -68,3 +68,21 @@ class GitHubClient:
             except Exception as e:
                 print(f"Error updating PR: {e}")
                 return False
+
+    async def delete_comment(self, owner: str, repo: str, comment_id: int) -> bool:
+        """Delete a comment"""
+        url = f'https://api.github.com/repos/{owner}/{repo}/issues/comments/{comment_id}'
+
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.delete(url, headers=self.headers, timeout=30.0)
+
+                if response.status_code == 204:
+                    return True
+                else:
+                    print(f"Failed to delete comment: {response.status_code}")
+                    return False
+
+            except Exception as e:
+                print(f"Error deleting comment: {e}")
+                return False

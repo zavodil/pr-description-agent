@@ -69,12 +69,78 @@ class PRDescriptionBot:
 
         return True
 
+    def should_auto_generate(self, event: dict) -> bool:
+        """Check if we should auto-generate description for new PR"""
+        # Must be a PR
+        if not event.get('pull_request'):
+            return False
+
+        # Must be opened action
+        if event.get('action') != 'opened':
+            return False
+
+        # Check if description is empty or contains trigger
+        pr_body = event['pull_request'].get('body', '').strip()
+
+        # Auto-generate if empty or contains /ai-describe
+        return not pr_body or '/ai-describe' in pr_body
+
+    async def process_new_pr(self, event: dict) -> bool:
+        """Process newly opened PR and generate description"""
+        try:
+            # Extract PR info
+            installation_id = event['installation']['id']
+            pr = event['pull_request']
+            owner = pr['base']['repo']['owner']['login']
+            repo = pr['base']['repo']['name']
+            pr_number = pr['number']
+
+            # Get installation token
+            token = await self.github_auth.get_installation_token(installation_id)
+            if not token:
+                print(f"Failed to get installation token for {installation_id}")
+                return False
+
+            # Initialize GitHub client
+            github = GitHubClient(token)
+
+            # Get PR diff
+            diff_content = await github.get_pr_diff(owner, repo, pr_number)
+
+            if not diff_content:
+                print(f"Failed to get PR diff for {owner}/{repo}#{pr_number}")
+                return False
+
+            # Generate description
+            description = await self.openai_client.generate_description(
+                diff_content, pr['title']
+            )
+
+            if not description:
+                print(f"Failed to generate description for {owner}/{repo}#{pr_number}")
+                return False
+
+            # Update PR
+            success = await github.update_pr_description(owner, repo, pr_number, description)
+
+            if success:
+                print(f"Auto-generated description for new PR {owner}/{repo}#{pr_number}")
+                return True
+            else:
+                print(f"Failed to update new PR {owner}/{repo}#{pr_number}")
+                return False
+
+        except Exception as e:
+            print(f"Error processing new PR: {e}")
+            return False
+
     async def process_pr_comment(self, event: dict) -> bool:
         """Process PR comment and generate description"""
         try:
             # Extract PR info
             pr_url = event['issue']['pull_request']['url']
             installation_id = event['installation']['id']
+            comment_id = event['comment']['id']
 
             # Parse owner, repo, pr_number from URL
             parts = pr_url.split('/')
@@ -112,7 +178,9 @@ class PRDescriptionBot:
             success = await github.update_pr_description(owner, repo, pr_number, description)
 
             if success:
-                print(f"Successfully updated PR {owner}/{repo}#{pr_number}")
+                # Delete the /describe comment
+                await github.delete_comment(owner, repo, comment_id)
+                print(f"Successfully updated PR {owner}/{repo}#{pr_number} and deleted comment")
                 return True
             else:
                 print(f"Failed to update PR {owner}/{repo}#{pr_number}")
@@ -142,13 +210,20 @@ async def webhook(request: Request):
     try:
         event = json.loads(payload)
 
-        # Process issue comment events
+        # Process issue comment events (manual /describe)
         if event.get('action') == 'created' and 'comment' in event:
             if bot.should_process_comment(event):
                 success = await bot.process_pr_comment(event)
                 return JSONResponse(
-                    content={'status': 'processed', 'success': success}
+                    content={'status': 'comment_processed', 'success': success}
                 )
+
+        # Process new PR events (auto-generate)
+        if 'pull_request' in event and bot.should_auto_generate(event):
+            success = await bot.process_new_pr(event)
+            return JSONResponse(
+                content={'status': 'pr_auto_generated', 'success': success}
+            )
 
         return JSONResponse(content={'status': 'ignored'})
 
@@ -179,5 +254,5 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.environ.get('PORT', 8088))
+    port = int(os.environ.get('PORT', 8000))
     uvicorn.run("app:app", host="0.0.0.0", port=port, reload=False)
