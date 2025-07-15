@@ -47,11 +47,24 @@ class PRDescriptionBot:
 
         return hmac.compare_digest(f'sha256={expected_signature}', signature)
 
-    def is_pr_author(self, event: dict) -> bool:
-        """Check if comment author is the same as PR author"""
-        comment_author = event['comment']['user']['id']
-        pr_author = event['issue']['user']['id']
-        return comment_author == pr_author
+    def is_pr_author_or_authorized(self, event: dict) -> bool:
+        """Check if comment author can trigger description generation"""
+        comment_author_id = event['comment']['user']['id']
+        comment_author_login = event['comment']['user']['login']
+        pr_author_id = event['issue']['user']['id']
+        pr_author_login = event['issue']['user']['login']
+        repo_owner_id = event['repository']['owner']['id']
+
+        # Allow if commenter is PR author
+        if comment_author_id == pr_author_id:
+            return True
+
+        # Allow if commenter is repository owner
+        if comment_author_id == repo_owner_id:
+            return True
+
+        print(f"Comment by {comment_author_login} on PR by {pr_author_login} - not authorized")
+        return False
 
     def should_process_comment(self, event: dict) -> bool:
         """Check if we should process this comment"""
@@ -63,8 +76,8 @@ class PRDescriptionBot:
         if '/describe' not in event['comment']['body']:
             return False
 
-        # Must be from PR author
-        if not self.is_pr_author(event):
+        # Check authorization
+        if not self.is_pr_author_or_authorized(event):
             return False
 
         return True
