@@ -1,0 +1,30 @@
+http:
+  port: 8000
+  health_check_path: /health
+name: AI PR Description Bot
+summary: GitHub App that automatically generates pull request descriptions using OpenAI's GPT models when PRs are opened or when requested via /describe command
+environment_variables:
+  - name: OPENAI_API_KEY
+    value: <your_openai_api_key>
+    description: OpenAI API key for authenticating requests to generate PR descriptions
+  - name: OPENAI_BASE_URL
+    value: https://api.openai.com/v1
+    description: Base URL for OpenAI API (defaults to https://api.openai.com/v1)
+  - name: DEFAULT_MODEL_NAME
+    value: gpt-4-turbo-preview
+    description: OpenAI model to use for generating PR descriptions (defaults to gpt-4-turbo-preview)
+  - name: GITHUB_WEBHOOK_SECRET
+    value: <your_github_webhook_secret>
+    description: Secret key for verifying GitHub webhook signatures to ensure requests are from GitHub
+  - name: GITHUB_APP_ID
+    value: <your_github_app_id>
+    description: GitHub App ID for authentication with GitHub API
+  - name: GITHUB_PRIVATE_KEY_PATH
+    value: <path_to_private_key_file>
+    description: File path to GitHub App's private key for JWT authentication (alternative to GITHUB_PRIVATE_KEY)
+  - name: GITHUB_PRIVATE_KEY
+    value: <your_github_private_key_content>
+    description: GitHub App's private key content for JWT authentication (alternative to GITHUB_PRIVATE_KEY_PATH)
+  - name: PORT
+    value: "8000"
+    description: Port number for the FastAPI server (defaults to 8000)
