@@ -1,0 +1,31 @@
+http:
+  port: 8000
+  health_check_path: /health
+stdin: false
+name: AI PR Description Bot
+summary: GitHub App that generates PR descriptions using AI
+environment_variables:
+  - name: GITHUB_APP_ID
+    value: <your_github_app_id>
+    description: The ID assigned to your GitHub App.
+  - name: GITHUB_PRIVATE_KEY
+    value: <your_github_app_private_key_content>
+    description: The content of your GitHub App's private key (e.g., the content of the .pem file). This is an alternative to GITHUB_PRIVATE_KEY_PATH.
+  - name: GITHUB_PRIVATE_KEY_PATH
+    value: <path_to_your_github_app_private_key_file>
+    description: The file path to your GitHub App's private key (.pem file). If both GITHUB_PRIVATE_KEY_PATH and GITHUB_PRIVATE_KEY are provided, the path is preferred.
+  - name: GITHUB_WEBHOOK_SECRET
+    value: <your_github_webhook_secret>
+    description: The secret token configured for your GitHub App's webhook, used to verify the authenticity of incoming payloads.
+  - name: OPENAI_API_KEY
+    value: <your_openai_api_key>
+    description: Your API key for accessing the OpenAI API.
+  - name: OPENAI_BASE_URL
+    value: https://api.openai.com/v1
+    description: (Optional) The base URL for the OpenAI API. Defaults to 'https://api.openai.com/v1'.
+  - name: DEFAULT_MODEL_NAME
+    value: gpt-4-turbo-preview
+    description: (Optional) The default AI model name to use for generating descriptions. Defaults to 'gpt-4-turbo-preview'.
+  - name: PORT
+    value: 8000
+    description: (Optional) The port on which the FastAPI application will listen. Defaults to 8000.
