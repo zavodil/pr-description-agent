@@ -1,0 +1,24 @@
+http:
+  port: 8000 # Port on which the agent's HTTP server listens. The application defaults to 8000 if the PORT environment variable is not set.
+  health_check_path: /health # Path for detailed health checks.
+name: AI PR Description Bot
+summary: GitHub App that generates PR descriptions using AI
+environment_variables:
+  - name: GITHUB_WEBHOOK_SECRET
+    value: <your_github_webhook_secret>
+    description: Secret used to verify the authenticity of incoming GitHub webhook payloads.
+  - name: GITHUB_APP_ID
+    value: <your_github_app_id>
+    description: The unique identifier for your GitHub App, required for authentication.
+  - name: GITHUB_PRIVATE_KEY
+    value: <your_github_private_key>
+    description: The content of your GitHub App's private key. This is an alternative to providing a file path via GITHUB_PRIVATE_KEY_PATH.
+  - name: OPENAI_API_KEY
+    value: <your_openai_api_key>
+    description: The API key for authenticating requests to the OpenAI API.
+  - name: OPENAI_BASE_URL
+    value: https://api.openai.com/v1
+    description: The base URL for the OpenAI API. Defaults to https://api.openai.com/v1.
+  - name: DEFAULT_MODEL_NAME
+    value: gpt-4-turbo-preview
+    description: The default AI model to be used for generating descriptions. Defaults to gpt-4-turbo-preview.
