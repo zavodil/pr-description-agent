@@ -1,0 +1,18 @@
+http:
+  port: 8000
+  health_check_path: /health
+name: AI PR Description Bot
+summary: GitHub App that generates PR descriptions using AI
+environment_variables:
+  - name: GITHUB_WEBHOOK_SECRET
+    value: <your_github_webhook_secret>
+    description: The secret key configured in GitHub for verifying webhook payloads.
+  - name: GITHUB_APP_ID
+    value: <your_github_app_id>
+    description: The ID of your GitHub App, used for authentication with the GitHub API.
+  - name: GITHUB_PRIVATE_KEY
+    value: <your_github_private_key>
+    description: The content of your GitHub App's private key, used to sign JWT tokens for authentication.
+  - name: OPENAI_API_KEY
+    value: <your_openai_api_key>
+    description: The API key for authenticating requests to the OpenAI API.
